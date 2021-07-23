@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <title>简简单单的后台</title>
+</head>
+
+<body>
+<div id="app" class="my-input">
+    <el-tabs type="border-card">
+        <!--    *************内容管理*************    -->
+        <el-tab-pane label="内容管理">
+            <el-form :inline="true">
+                <el-form-item label="内容编号">
+                    <el-input v-model="contentQuery.contentCode" clearable></el-input>
+                </el-form-item>
+                <el-form-item label="分类">
+                    <el-select v-model="contentQuery.classifyCode" clearable>
+                        <el-option v-for="item in classifyOption" :key="item.value" :label="item.label"
+                                   :value="item.value">
+                            <span style="float: left">{{ item.label }}</span>
+                            <span style="float: right; color: #8492a6; font-size: 13px">{{ item.value }}</span>
+                        </el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="类型">
+                    <el-select v-model="contentQuery.type" clearable>
+                        <el-option label="图片" :value="1"></el-option>
+                        <el-option label="GIF" :value="2"></el-option>
+                        <el-option label="视频" :value="3"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="状态">
+                    <el-select v-model="contentQuery.status" clearable>
+                        <el-option label="不可见" :value="0"></el-option>
+                        <el-option label="正常" :value="1"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" @click="queryContent()">查询</el-button>
+                </el-form-item>
+            </el-form>
+            <el-table :data="contents" border v-loading="loading">
+                <el-table-column label="ID" prop="id"></el-table-column>
+                <el-table-column label="内容">
+                    <template slot-scope="scope">
+                        <video v-if="scope.row.type == 3"
+                               :src="baseImageUrl + scope.row.fileName"
+                               width="100%"
+                               controls="controls">
+                        </video>
+                        <el-image v-else
+                                  style="width: 100px; height: 100px"
+                                  :src="'http://120.78.230.188/images/' + scope.row.fileName"
+                                  :preview-src-list="['http://120.78.230.188/images/' + scope.row.fileName]">
+                        </el-image>
+                    </template>
+                </el-table-column>
+                <el-table-column label="内容编号" prop="contentCode"></el-table-column>
+                <el-table-column label="作者" prop="author"></el-table-column>
+                <el-table-column label="阅读数" prop="view"></el-table-column>
+                <el-table-column label="推荐数" prop="recommend"></el-table-column>
+                <el-table-column label="不推荐数" prop="notRecommend"></el-table-column>
+                <el-table-column label="评论数" prop=""></el-table-column>
+                <el-table-column label="分类编号" prop="classifyCode"></el-table-column>
+                <el-table-column label="分类名称" prop="classifyName"></el-table-column>
+                <el-table-column label="类型" prop="type">
+                    <template slot-scope="scope">
+                        <span v-if="scope.row.type == 1">图片</span>
+                        <span v-if="scope.row.type == 2">GIF</span>
+                        <span v-if="scope.row.type == 3">视频</span>
+                    </template>
+                </el-table-column>
+                <el-table-column label="状态" prop="status">
+                    <template slot-scope="scope">
+                        <span v-if="scope.row.status == 0">不可见</span>
+                        <span v-if="scope.row.status == 1">正常</span>
+                    </template>
+                </el-table-column>
+                <el-table-column label="操作" width="260">
+                    <template slot-scope="scope">
+                        <el-button type="success" v-if="scope.row.status == 0"
+                                   @click="updateContentStatus(scope.row.id, 1)">上架
+                        </el-button>
+                        <el-button type="warning" v-if="scope.row.status == 1"
+                                   @click="updateContentStatus(scope.row.id, 0)">下架
+                        </el-button>
+                        <el-button type="primary" @click="showContentDialog(scope.row)">修改</el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+            <div>
+                <el-pagination
+                        style="margin-top: 15px"
+                        background
+                        layout="total, sizes, prev, pager, next"
+                        :page-sizes="[3, 5, 10, 20, 50]"
+                        :current-page="contentQuery.pageNo"
+                        :page-size="contentQuery.pageSize"
+                        :total="contentQuery.total"
+                        @current-change="cotentPageChange"
+                        @size-change="cotentPageSizeChange">
+                </el-pagination>
+            </div>
+        </el-tab-pane>
+
+        <!--    *************分类管理*************    -->
+        <el-tab-pane label="分类管理">
+            <el-form :inline="true">
+                <el-form-item>
+                    <el-popover
+                            title="新增分类"
+                            v-model="classifyVisible"
+                            placement="bottom-start"
+                            width="400"
+                            trigger="click">
+                        <el-input v-model="classify.classifyName" placeholder="请输入分类名称"></el-input>
+                        <el-button type="success" @click="insertClassify">确认</el-button>
+                        <el-button type="success" slot="reference">新增</el-button>
+                    </el-popover>
+                    <el-button type="primary" @click="queryClassify">查询</el-button>
+                </el-form-item>
+            </el-form>
+            <el-table :data="classifys" border v-loading="loading">
+                <el-table-column label="分类名称" prop="classifyName"></el-table-column>
+                <el-table-column label="分类编码" prop="classifyCode"></el-table-column>
+                <el-table-column label="最小内容主键" prop="minContentId"></el-table-column>
+                <el-table-column label="最大内容主键" prop="maxContentId"></el-table-column>
+            </el-table>
+        </el-tab-pane>
+        <el-tab-pane label="评论管理"></el-tab-pane>
+    </el-tabs>
+
+    <!--    *************Dialog*************    -->
+    <el-dialog title="内容修改" :visible.sync="contentDialog">
+        <el-form label-position="left" label-width="75px">
+            <el-form-item label="内容编号">
+                <span>{{content.contentCode}}</span>
+            </el-form-item>
+            <el-form-item label="作者">
+                <el-input v-model="content.author"></el-input>
+            </el-form-item>
+            <el-form-item label="分类">
+                <el-select v-model="content.classifyCode">
+                    <el-option v-for="item in classifyOption" :key="item.value" :label="item.label" :value="item.value">
+                        <span style="float: left">{{ item.label }}</span>
+                        <span style="float: right; color: #8492a6; font-size: 13px">{{ item.value }}</span>
+                    </el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="类型">
+                <el-select v-model="content.type">
+                    <el-option label="图片" :value="1"></el-option>
+                    <el-option label="GIF" :value="2"></el-option>
+                    <el-option label="视频" :value="3"></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="状态">
+                <el-radio-group v-model="content.status">
+                    <el-radio :label="0">不可见</el-radio>
+                    <el-radio :label="1">正常</el-radio>
+                </el-radio-group>
+            </el-form-item>
+            <el-form-item>
+                <el-button type="warning" @click="updateContent">确认修改</el-button>
+            </el-form-item>
+        </el-form>
+    </el-dialog>
+</div>
+</body>
+
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script src="js/api.js"></script>
+
+<script>
+    var that = new Vue({
+        el: '#app',
+        data: function () {
+            return {
+                baseImageUrl: baseImageUrl,
+                loading: true,
+                contentQuery: {
+                    pageNo: 1,
+                    pageSize: 5,
+                    total: 0,
+                    contentCode: '',
+                    classifyCode: '',
+                    type: '',
+                    status: ''
+                },
+                contents: [],
+                contentDialog: false,
+                content: {
+                    id: '',
+                    author: '',
+                    contentCode: '',
+                    classifyCode: '',
+                    type: '',
+                    status: ''
+                },
+                classifyQuery: {
+                    pageNo: 1,
+                    pageSize: 100,
+                    total: 0,
+                    classifyCode: '',
+                    classifyName: ''
+                },
+                classifys: [],
+                classifyOption: [],
+                classifyVisible: false,
+                classify: {
+                    id: '',
+                    classifyName: ''
+                }
+            }
+        },
+        methods: {
+            queryContent() {
+                axios.post(pageContentUrl, {
+                    pageNo: this.contentQuery.pageNo,
+                    pageSize: this.contentQuery.pageSize,
+                    contentCode: this.contentQuery.contentCode,
+                    classifyCode: this.contentQuery.classifyCode,
+                    type: this.contentQuery.type,
+                    status: this.contentQuery.status
+                }).then(res => {
+                    this.contents = res.data.list;
+                    this.contentQuery.total = Number(res.data.total);
+                }).finally(() => {
+                    this.loading = false;
+                });
+            },
+            cotentPageChange(pageNo) {
+                this.contentQuery.pageNo = pageNo;
+                this.queryContent();
+            },
+            cotentPageSizeChange(pageSize) {
+                this.contentQuery.pageSize = pageSize;
+                this.queryContent();
+            },
+            updateContent() {
+                axios.post(updateContentUrl, {
+                    id: this.content.id,
+                    author: this.content.author,
+                    classifyCode: this.content.classifyCode,
+                    type: this.content.type,
+                    status: this.content.status
+                }).then(res => {
+                    this.$message.success('成功');
+                    this.queryContent();
+                    this.contentDialog = false;
+                });
+            },
+            updateContentStatus(id, status) {
+                this.loading = true;
+                axios.post(updateContentUrl, {
+                    id: id,
+                    status: status
+                }).then(res => {
+                    this.$message.success('成功');
+                    this.queryContent();
+                }).finally(() => {
+                    this.loading = false;
+                });
+            },
+            showContentDialog(row) {
+                this.contentDialog = true;
+                this.content.id = row.id;
+                this.content.author = row.author;
+                this.content.contentCode = row.contentCode;
+                this.content.classifyCode = row.classifyCode;
+                this.content.type = row.type;
+                this.content.status = row.status;
+            },
+            queryClassify() {
+                this.loading = true;
+                axios.post(pageClassifyUrl, {
+                    pageNo: this.classifyQuery.pageNo,
+                    pageSize: this.classifyQuery.pageSize,
+                    classifyName: this.classifyQuery.classifyName,
+                    classifyCode: this.classifyQuery.classifyCode
+                }).then(res => {
+                    this.classifys = res.data.list;
+                    this.classifyQuery.total = Number(res.data.total);
+                    if (this.classifyOption.length == 0) {
+                        this.getClassifyOption();
+                    }
+                }).finally(() => {
+                    this.loading = false;
+                });
+            },
+            getClassifyOption() {
+                if (this.classifys.length == 0) {
+                    return;
+                }
+                let options = [];
+                this.classifys.forEach(item => {
+                    let option = {
+                        label: item.classifyName,
+                        value: item.classifyCode
+                    }
+                    options.push(option);
+                });
+                this.classifyOption = options;
+            },
+            insertClassify() {
+                this.loading = true;
+                axios.post(insertClassifyUrl, {}, {
+                    params: {
+                        classifyName: this.classify.classifyName
+                    }
+                }).then(res => {
+                    this.queryClassify();
+                    this.$message.success('成功');
+                    this.classify.classifyName = '';
+                    this.classifyVisible = false;
+                }).finally(() => {
+                    this.loading = false;
+                })
+            }
+        }
+    })
+</script>
+
+<script>
+    that.queryContent();
+    that.queryClassify();
+</script>
+
+<style>
+</style>
+</html>

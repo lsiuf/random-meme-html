@@ -192,12 +192,12 @@
             contentObj = data;
             $('#none-content').hide();
 
-      let contentUrl = '/images/' + data.contentUrl;
-      $('#content').attr('href', contentUrl);
-      $('#pageview').text(' ' + data.view);
-      $('#content-code').text(data.contentCode);
-      $('#recommend').text(' ' + data.recommend);
-      $('#notrecommend').text(' ' + data.notRecommend);
+            let contentUrl = baseImageUrl + data.fileName;
+            $('#content').attr('href', contentUrl);
+            $('#pageview').text(' ' + data.view);
+            $('#content-code').text(data.contentCode);
+            $('#recommend').text(' ' + data.recommend);
+            $('#notrecommend').text(' ' + data.notRecommend);
 
             if (data.author) {
                 $('#author').text(' ' + data.author);
