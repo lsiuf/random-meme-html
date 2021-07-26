@@ -55,6 +55,9 @@
                                   style="width: 100px; height: 100px"
                                   :src="'http://120.78.230.188/images/' + scope.row.fileName"
                                   :preview-src-list="['http://120.78.230.188/images/' + scope.row.fileName]">
+                            <div slot="placeholder" class="image-slot">
+                                加载中<span class="dot">...</span>
+                            </div>
                         </el-image>
                     </template>
                 </el-table-column>
