@@ -45,6 +45,10 @@
             transform: translate(-50%, -50%);
         }
 
+        .hide-loading {
+            display: none !important;
+        }
+
         .content-img {
             display: none;
             max-width: 100%;
@@ -112,9 +116,17 @@
                 <div class="col">
                     <!-- 内容主题 -->
                     <div class="content-div">
+                        <!-- loading控件 -->
+                        <div id="loading" class="d-flex justify-content-center align-items-center"
+                             style="width: 100%; height: 100%;">
+                            <div class="spinner-border text-light" role="status">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                        </div>
+                        <!-- 多媒体插件 fancybox -->
                         <a id="content" data-fancybox="content">
                             <!-- 缩略图 -->
-                            <img id="img-tag" class="content-img"/>
+                            <img id="img-tag" class="content-img" alt="加载中..." onLoad="imgOnLoad()"/>
                             <!-- 视频播放按钮 -->
                             <i id="video-tag" class="bi bi-play-circle content-i"></i>
                         </a>
@@ -127,6 +139,7 @@
                 </div>
             </div>
 
+            <!-- 其他数据 -->
             <div class="row font-weight-bolder text-left icon-font-size">
                 <!-- 推荐数 -->
                 <div class="col">
@@ -190,37 +203,46 @@
     function getContent() {
         $.get(getContentUrl, (data, status) => {
             contentObj = data;
+            //隐藏无内容控件
             $('#none-content').hide();
-
-            let contentUrl = baseImageUrl + data.fileName;
-            $('#content').attr('href', contentUrl);
+            //set 多媒体插件资源路径
+            $('#content').attr('href', baseImageUrl + data.fileName);
+            //set 阅读数
             $('#pageview').text(' ' + data.view);
+            //set 内容编号
             $('#content-code').text(data.contentCode);
+            //set 推荐数
             $('#recommend').text(' ' + data.recommend);
+            //set 阅读数
             $('#notrecommend').text(' ' + data.notRecommend);
+            //set 作者
+            $('#author').text(' ' + (data.author ? data.author : '-'));
 
-            if (data.author) {
-                $('#author').text(' ' + data.author);
-            } else {
-                $('#author').text(' -');
-            }
-
+            //隐藏缩略图和视频播放按钮
+            $('#img-tag').hide();
+            $('#video-tag').hide();
+            //根据内容类型显示缩略图或视频播放按钮
             if (data.type == 1 || data.type == 2) {
-                $('#img-tag').attr('src', contentUrl);
-                $('#img-tag').show();
-                $('#video-tag').hide();
+                //显示loading
+                $('#loading').removeClass('hide-loading');
+                //设置图片资源路径
+                $('#img-tag').attr('src', baseImageUrl + data.fileName);
             } else {
-                $('#img-tag').attr('src', '');
+                //显示视频播放按钮
                 $('#video-tag').show();
-                $('#img-tag').hide();
             }
 
+            //推荐、不推荐按钮置灰
             $('#recommend-icon').attr('class', 'bi bi-hand-thumbs-up');
             $('#notrecommend-icon').attr('class', 'bi bi-hand-thumbs-down');
+
+            //根据用户是否推荐判断点亮按钮
             if (data.userRecommendType != null) {
+                //点亮推荐
                 if (data.userRecommendType == 1) {
                     $('#recommend-icon').attr('class', 'bi bi-hand-thumbs-up-fill');
                 }
+                //点亮不推荐
                 if (data.userRecommendType == 0) {
                     $('#notrecommend-icon').attr('class', 'bi bi-hand-thumbs-down-fill');
                 }
@@ -264,6 +286,16 @@
         Fancybox.bind("[data-fancybox]", {
             // Your options go here
         });
+    }
+
+    // 预览图加载事件
+    function imgOnLoad() {
+        //隐藏loading
+        $('#loading').addClass('hide-loading');
+        //显示图片
+        setTimeout(() => {
+            $('#img-tag').show();
+        }, 100);
     }
 </script>
 
