@@ -39,7 +39,7 @@
                     </el-select>
                 </el-form-item>
                 <el-form-item>
-                    <el-button type="primary" @click="queryContent()">查询</el-button>
+                    <el-button type="primary" @click="searchBtn">查询</el-button>
                 </el-form-item>
             </el-form>
             <el-table :data="contents" border v-loading="loading">
@@ -236,6 +236,10 @@
                 }).finally(() => {
                     this.loading = false;
                 });
+            },
+            searchBtn(){
+                this.contentQuery.pageNo = 1;
+                this.queryContent();
             },
             cotentPageChange(pageNo) {
                 this.contentQuery.pageNo = pageNo;
