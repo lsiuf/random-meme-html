@@ -12,37 +12,68 @@
     <el-tabs type="border-card">
         <!--    *************内容管理*************    -->
         <el-tab-pane label="内容管理">
-            <el-form :inline="true">
-                <el-form-item label="内容编号">
-                    <el-input v-model="contentQuery.contentCode" clearable></el-input>
-                </el-form-item>
-                <el-form-item label="分类">
-                    <el-select v-model="contentQuery.classifyCode" clearable>
-                        <el-option v-for="item in classifyOption" :key="item.value" :label="item.label"
-                                   :value="item.value">
-                            <span style="float: left">{{ item.label }}</span>
-                            <span style="float: right; color: #8492a6; font-size: 13px">{{ item.value }}</span>
-                        </el-option>
-                    </el-select>
-                </el-form-item>
-                <el-form-item label="类型">
-                    <el-select v-model="contentQuery.type" clearable>
-                        <el-option label="图片" :value="1"></el-option>
-                        <el-option label="GIF" :value="2"></el-option>
-                        <el-option label="视频" :value="3"></el-option>
-                    </el-select>
-                </el-form-item>
-                <el-form-item label="状态">
-                    <el-select v-model="contentQuery.status" clearable>
-                        <el-option label="不可见" :value="0"></el-option>
-                        <el-option label="正常" :value="1"></el-option>
-                    </el-select>
-                </el-form-item>
-                <el-form-item>
-                    <el-button type="primary" @click="searchBtn">查询</el-button>
-                </el-form-item>
+            <el-form label-width="50px">
+                <el-row>
+                    <el-col :span="4">
+                        <el-form-item label="分类">
+                            <el-select v-model="contentQuery.classifyCode" clearable>
+                                <el-option v-for="item in classifyOption" :key="item.value" :label="item.label"
+                                           :value="item.value">
+                                    <span style="float: left">{{ item.label }}</span>
+                                    <span style="float: right; color: #8492a6; font-size: 13px">{{ item.value }}</span>
+                                </el-option>
+                            </el-select>
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="4">
+                        <el-form-item label="类型">
+                            <el-select v-model="contentQuery.type" clearable>
+                                <el-option label="图片" :value="1"></el-option>
+                                <el-option label="GIF" :value="2"></el-option>
+                                <el-option label="视频" :value="3"></el-option>
+                            </el-select>
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="3">
+                        <el-form-item label="状态">
+                            <el-select v-model="contentQuery.status" clearable>
+                                <el-option label="不可见" :value="0"></el-option>
+                                <el-option label="正常" :value="1"></el-option>
+                            </el-select>
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="1">
+                        <el-form-item>
+                            <el-button type="primary" @click="searchBtn">查询</el-button>
+                        </el-form-item>
+                    </el-col>
+                </el-row>
+                <el-row>
+                    <el-col :span="1">
+                        <el-form-item>
+                            <el-popover
+                                    placement="right"
+                                    trigger="click">
+                                已选中[ {{content.ids.length}} ]行数据
+                                <el-select v-model="content.classifyCode" placeholder="请选择修改的类目" clearable>
+                                    <el-option v-for="item in classifyOption" :key="item.value" :label="item.label"
+                                               :value="item.value">
+                                        <span style="float: left">{{ item.label }}</span>
+                                        <span style="float: right; color: #8492a6; font-size: 13px">{{ item.value }}</span>
+                                    </el-option>
+                                </el-select>
+                                <el-button style="margin-left: 20px" type="primary" @click="updateContentClassify">
+                                    确定提交
+                                </el-button>
+                                <el-button slot="reference" type="warning">批量修改类目
+                                </el-button>
+                            </el-popover>
+                        </el-form-item>
+                    </el-col>
+                </el-row>
             </el-form>
-            <el-table :data="contents" border v-loading="loading">
+            <el-table :data="contents" border v-loading="loading" @selection-change="tableSelection">
+                <el-table-column type="selection"></el-table-column>
                 <el-table-column label="ID" prop="id"></el-table-column>
                 <el-table-column label="内容">
                     <template slot-scope="scope">
@@ -199,6 +230,7 @@
                 contentDialog: false,
                 content: {
                     id: '',
+                    ids: [],
                     author: '',
                     contentCode: '',
                     classifyCode: '',
@@ -237,9 +269,18 @@
                     this.loading = false;
                 });
             },
-            searchBtn(){
+            searchBtn() {
                 this.contentQuery.pageNo = 1;
                 this.queryContent();
+            },
+            tableSelection(vals) {
+                this.content.ids = [];
+                if (vals.length == 0) {
+                    return;
+                }
+                vals.forEach(val => {
+                    this.content.ids.push(val.id);
+                })
             },
             cotentPageChange(pageNo) {
                 this.contentQuery.pageNo = pageNo;
@@ -267,6 +308,23 @@
                 axios.post(updateContentUrl, {
                     id: id,
                     status: status
+                }).then(res => {
+                    this.$message.success('成功');
+                    this.queryContent();
+                }).finally(() => {
+                    this.loading = false;
+                });
+            },
+            updateContentClassify() {
+                if (this.content.ids.length == 0) {
+                    this.$message.error('请选择需要修改的数据');
+                    return;
+                }
+                this.loading = true;
+                axios.post(updateContentClassifyUrl, this.content.ids, {
+                    params: {
+                        classifyCode: this.content.classifyCode
+                    }
                 }).then(res => {
                     this.$message.success('成功');
                     this.queryContent();
