@@ -9,3 +9,5 @@ const getContentUrl = baseUrl + 'content/randomGet';
 const recommendUrl = baseUrl + 'recommend/recommend';
 // 不推荐
 const notRecommendUrl = baseUrl + 'recommend/notRecommend';
+// 统计推荐数量
+const recommendCountUrl = baseUrl + 'recommend/recommendCount';

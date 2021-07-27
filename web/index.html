@@ -213,7 +213,7 @@
             $('#content-code').text(data.contentCode);
             //set 推荐数
             $('#recommend').text(' ' + data.recommend);
-            //set 阅读数
+            //set 不推荐数
             $('#notrecommend').text(' ' + data.notRecommend);
             //set 作者
             $('#author').text(' ' + (data.author ? data.author : '-'));
@@ -269,16 +269,22 @@
     /**
      * 点击推荐： 点亮推荐icon、置灰不推荐icon
      * 点击不推荐： 点亮不推荐icon、置灰推荐icon
+     * 并请求接口获取最新的推荐数量
      **/
     function updateRecommend(isRecommend) {
         if (isRecommend) {
             $('#recommend-icon').attr('class', 'bi bi-hand-thumbs-up-fill');
             $('#notrecommend-icon').attr('class', 'bi bi-hand-thumbs-down');
-
         } else {
             $('#notrecommend-icon').attr('class', 'bi bi-hand-thumbs-down-fill');
             $('#recommend-icon').attr('class', 'bi bi-hand-thumbs-up');
         }
+
+        let url = recommendCountUrl + '?contentId=' + contentObj.id;
+        $.get(url, (data, status) => {
+            $('#recommend').text(' ' + data.recommend);
+            $('#notrecommend').text(' ' + data.notRecommend);
+        });
     }
 
     // 初始化多媒体控件
