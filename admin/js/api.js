@@ -1,7 +1,7 @@
 // 公共路径
-const baseUrl = 'http://120.78.230.188:9527/admin/';
+const baseUrl = 'https://randommeme.cn/admin/';
 // 图片公共路径
-const baseImageUrl = 'http://120.78.230.188/images/';
+const baseImageUrl = 'https://randommeme.cn/images/';
 
 // 分页查询内容
 const pageContentUrl = baseUrl + 'content/page';
